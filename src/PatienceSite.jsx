@@ -776,8 +776,7 @@ export default function PatienceSite() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [favorites, setFavorites] = useState(new Set());
   const [checkoutProduct, setCheckoutProduct] = useState(null);
-  const [checkoutProduct, setCheckoutProduct] = useState(null);
-
+  
   function go(p) {
     setPage(p);
     setDrawerOpen(false);
