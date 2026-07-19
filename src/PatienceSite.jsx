@@ -650,6 +650,70 @@ function sendWhatsAppNotification(order) {
   window.open("https://wa.me/" + OWNER_WHATSAPP + "?text=" + msg, "_blank");
 }
 
+function PaymentReturnBanner() {
+  const [result, setResult] = React.useState(null);
+  const [order, setOrder] = React.useState(null);
+  const [notified, setNotified] = React.useState(false);
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const reference = params.get("reference") || params.get("trxref");
+    if (!reference) return;
+
+    fetch(`/api/verify-payment?reference=${encodeURIComponent(reference)}`)
+      .then(res => res.json())
+      .then(data => {
+        const pending = localStorage.getItem("pat_pending_order");
+        const parsed = pending ? JSON.parse(pending) : null;
+        setOrder(parsed);
+        setResult(data.verified ? "success" : "failed");
+        localStorage.removeItem("pat_pending_order");
+        window.history.replaceState({}, "", window.location.pathname);
+      })
+      .catch(() => {
+        setResult("failed");
+        window.history.replaceState({}, "", window.location.pathname);
+      });
+  }, []);
+
+  if (!result) return null;
+
+  return (
+    <div className="co-overlay" onClick={() => setResult(null)}>
+      <div className="co-modal" onClick={e => e.stopPropagation()} style={{ textAlign: "center", padding: "3rem 2rem" }}>
+        {result === "success" ? (
+          <>
+            <div style={{ fontSize: 48, marginBottom: "1rem" }}>🎉</div>
+            <p style={{ fontFamily: "Playfair Display, serif", fontSize: 22, fontWeight: 700, color: "var(--ink)", marginBottom: ".5rem" }}>
+              Order Confirmed!
+            </p>
+            <p style={{ fontSize: 13.5, color: "var(--ink2)", lineHeight: 1.7, marginBottom: "1.5rem" }}>
+              Thank you{order?.name ? `, ${order.name.split(" ")[0]}` : ""}! Your payment was successful.
+            </p>
+            {!notified && order && (
+              <button className="co-pay-btn" style={{ marginBottom: "0.75rem" }}
+                onClick={() => { sendWhatsAppNotification(order); setNotified(true); }}>
+                Confirm on WhatsApp
+              </button>
+            )}
+            <button className="co-pay-btn" onClick={() => setResult(null)}>Continue Shopping</button>
+          </>
+        ) : (
+          <>
+            <p style={{ fontFamily: "Playfair Display, serif", fontSize: 22, fontWeight: 700, color: "var(--ink)", marginBottom: ".5rem" }}>
+              Payment not confirmed
+            </p>
+            <p style={{ fontSize: 13.5, color: "var(--ink2)", lineHeight: 1.7, marginBottom: "1.5rem" }}>
+              We couldn't confirm this payment. If you were charged, message us on WhatsApp with your reference.
+            </p>
+            <button className="co-pay-btn" onClick={() => setResult(null)}>Close</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function CheckoutModal({ product, onClose }) {
   const [size, setSize] = useState("");
   const [name, setName] = useState("");
@@ -670,38 +734,48 @@ function CheckoutModal({ product, onClose }) {
   };
 
   const handlePay = async () => {
-    if (!validate()) return;
-    setPaying(true);
-    await loadPaystack();
-    const ref = "PAT-" + Date.now();
-    const handler = window.PaystackPop.setup({
-      key: PAYSTACK_KEY,
-      email: email.trim(),
-      amount: product.price * 100,
-      currency: "NGN",
-      ref,
-      metadata: {
-        custom_fields: [
-          { display_name: "Product", variable_name: "product", value: product.name },
-          { display_name: "Size", variable_name: "size", value: size },
-          { display_name: "Delivery Address", variable_name: "address", value: address.trim() },
-          { display_name: "Customer Name", variable_name: "customer_name", value: name.trim() },
-        ]
-      },
-      callback: (response) => {
-        setPaying(false);
-        setSuccess(true);
-        sendWhatsAppNotification({
-          product: product.name, size,
-          amount: product.price,
-          name: name.trim(), email: email.trim(),
-          address: address.trim(), ref: response.reference,
-        });
-      },
-      onClose: () => { setPaying(false); }
-    });
-    handler.openIframe();
+  if (!validate()) return;
+  setPaying(true);
+
+  const ref = "PAT-" + Date.now();
+  const orderDetails = {
+    product: product.name, size, amount: product.price,
+    name: name.trim(), email: email.trim(), address: address.trim(), ref,
   };
+
+  // Save so we can restore this after Paystack redirects the customer back.
+  localStorage.setItem("pat_pending_order", JSON.stringify(orderDetails));
+
+  try {
+    const res = await fetch("/api/initialize-payment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: email.trim(),
+        amount: product.price * 100,
+        reference: ref,
+        metadata: {
+          custom_fields: [
+            { display_name: "Product", variable_name: "product", value: product.name },
+            { display_name: "Size", variable_name: "size", value: size },
+            { display_name: "Delivery Address", variable_name: "address", value: address.trim() },
+            { display_name: "Customer Name", variable_name: "customer_name", value: name.trim() },
+          ],
+        },
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.authorization_url) throw new Error(data.error || "Could not start payment");
+
+    window.location.href = data.authorization_url; // leave the site → Paystack checkout
+  } catch (err) {
+    console.error(err);
+    setPaying(false);
+    localStorage.removeItem("pat_pending_order");
+    setErrors(p => ({ ...p, pay: "Could not start payment. Please try again." }));
+  }
+};
 
   if (success) return (
     <div className="co-overlay" onClick={onClose}>
@@ -819,6 +893,7 @@ export default function PatienceSite() {
   return (
     <div className="patience-site">
       <style>{CSS}</style>
+      <PaymentReturnBanner /> 
       <AnnouncementBar />
       <NavBar page={page} go={go} drawerOpen={drawerOpen} setDrawerOpen={setDrawerOpen} />
       <Drawer drawerOpen={drawerOpen} go={go} />
