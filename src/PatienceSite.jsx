@@ -1014,7 +1014,7 @@ const CSS = `
 /* ─── HERO FULL BLEED ──────────────────── */
 .hero-full{position:relative;background:var(--b5);min-height:clamp(480px,75vh,760px);display:grid;grid-template-columns:1fr;overflow:hidden}
 @media(min-width:768px){.hero-full{grid-template-columns:1fr 1fr}}
-.hero-img-side{background:var(--b4);min-height:320px;position:relative;overflow:hidden;order:1;display:flex;align-items:center;justify-content:center}
+.hero-img-side{background:var(--b4);min-height:480px;position:relative;overflow:hidden;order:1;display:flex;align-items:center;justify-content:center}
 @media(min-width:768px){.hero-img-side{order:2;min-height:unset}}
 .hero-img-side img{width:100%;height:100%;object-fit:cover;object-position:center top;position:absolute;inset:0}
 .hero-ph{position:relative;z-index:1}
