@@ -1213,7 +1213,7 @@ footer{background:var(--b6);color:rgba(255,255,255,.55);padding:3rem var(--px) 2
 
   /* ── Hero ── */
   .hero-full{ min-height:unset; }
-  .hero-img-side{ min-height:52vw; order:1; }
+  .hero-img-side{ min-height:110vw; order:1; }
   .hero-copy{ padding:1.75rem var(--px) 2rem; order:2; }
   .hero-h1{ font-size:clamp(32px,9vw,48px); margin-bottom:1rem; }
   .hero-verse{ font-size:12.5px; margin-bottom:1.5rem; }
