@@ -127,7 +127,7 @@ const MARQUEE_WORDS = ["Confidence", "Style", "Patience", "Proverbs 31", "Tops �
    SMALL SHARED PIECES
 ────────────────────────────────────────────────────────────── */
 
-function ProductCard({ product, isFavorite, onToggleFavorite, onClick, onBuy }) {
+function ProductCard({ product, isFavorite, onToggleFavorite, onClick, onBuy, onAddToCart }) {
   return (
     <div className="prod-card" onClick={onClick} role={onClick ? "link" : undefined} tabIndex={onClick ? 0 : undefined}>
       <div className="prod-img" style={!product.image ? { background: product.gradient } : undefined}>
@@ -163,6 +163,12 @@ function ProductCard({ product, isFavorite, onToggleFavorite, onClick, onBuy }) 
             onClick={e => { e.stopPropagation(); onBuy(product); }}
           >Buy Now</button>
         )}
+        {onAddToCart && (
+          <button
+            className="prod-cart-btn"
+            onClick={e => { e.stopPropagation(); onAddToCart(product); }}
+          >Add To Cart</button>
+        )}
       </div>
     </div>
   );
@@ -180,7 +186,7 @@ function AnnouncementBar() {
   );
 }
 
-function NavBar({ page, go, drawerOpen, setDrawerOpen }) {
+function NavBar({ page, go, drawerOpen, setDrawerOpen, cartCount, setCartOpen }) {
   return (
     <div className="nav-wrap">
       <div className="nav-util">
@@ -227,8 +233,9 @@ function NavBar({ page, go, drawerOpen, setDrawerOpen }) {
           </div>
         </div>
         <div className="nav-icons">
-          <button className="nav-icon-btn" aria-label="Search">
-            <Search size={18} />
+          <button className="nav-icon-btn cart-btn" aria-label="Cart" onClick={() => setCartOpen(true)}>
+  <ShoppingBag size={18} />
+  <span className="cart-badge">{cartCount}</span>
           </button>
           <button className="nav-icon-btn cart-btn" aria-label="Cart">
             <ShoppingBag size={18} />
@@ -347,7 +354,7 @@ function Footer({ go }) {
    PAGES
 ────────────────────────────────────────────────────────────── */
 
-function HomePage({ go, favorites, onToggleFavorite, onBuy }) {
+function HomePage({ go, favorites, onToggleFavorite, onBuy, onAddToCart  }) {
   const newArrivals = [
     { ...PRODUCTS.sets[0], cat: "sets" },
     { ...PRODUCTS.sets[3], cat: "sets" },
@@ -473,7 +480,7 @@ function HomePage({ go, favorites, onToggleFavorite, onBuy }) {
   );
 }
 
-function CategoryPage({ catKey, go, favorites, onToggleFavorite, onBuy }) {
+function CategoryPage({ catKey, go, favorites, onToggleFavorite, onBuy, onAddToCart }) {
   const meta = CATEGORY_META[catKey];
   const products = PRODUCTS[catKey];
   const [filter, setFilter] = useState("All");
@@ -507,7 +514,7 @@ function CategoryPage({ catKey, go, favorites, onToggleFavorite, onBuy }) {
       <section className="products-sec">
         <div className="prod-grid">
           {shown.map((p) => (
-            <ProductCard key={p.id} product={p} isFavorite={favorites.has(p.id)} onToggleFavorite={onToggleFavorite} onBuy={onBuy} />
+            <ProductCard key={p.id} product={p} isFavorite={favorites.has(p.id)} onToggleFavorite={onToggleFavorite} onBuy={onBuy} onAddToCart={addToCart} />
           ))}
         </div>
         {shown.length === 0 && <p className="empty-msg">No pieces match this filter yet — check back soon.</p>}
@@ -716,8 +723,48 @@ function sendWhatsAppNotification(order) {
   );
   window.open("https://wa.me/" + OWNER_WHATSAPP + "?text=" + msg, "_blank");
 }
+function CartDrawer({ cart, cartOpen, setCartOpen, removeFromCart, updateQty, cartTotal, onCheckout }) {
+  if (!cartOpen) return null;
+  return (
+    <div className="co-overlay" onClick={() => setCartOpen(false)}>
+      <div className="co-modal" onClick={e => e.stopPropagation()} style={{ textAlign: "left", maxWidth: 420 }}>
+        <button className="co-close" onClick={() => setCartOpen(false)} aria-label="Close">×</button>
+        <p style={{ fontFamily: "Playfair Display, serif", fontSize: 22, fontWeight: 700, marginBottom: "1rem" }}>Your Cart</p>
 
-function CheckoutModal({ product, onClose }) {
+        {cart.length === 0 ? (
+          <p style={{ color: "var(--ink2)" }}>Your cart is empty.</p>
+        ) : (
+          <>
+            {cart.map(item => (
+              <div key={item.id} style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem", alignItems: "center" }}>
+                {item.image && <img src={item.image} alt={item.name} style={{ width: 56, height: 56, objectFit: "cover" }} />}
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600 }}>{item.name}</p>
+                  <p style={{ fontSize: 12, color: "var(--ink2)" }}>{"₦" + item.price.toLocaleString("en-NG")}</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.25rem" }}>
+                    <button onClick={() => updateQty(item.id, item.qty - 1)}>-</button>
+                    <span>{item.qty}</span>
+                    <button onClick={() => updateQty(item.id, item.qty + 1)}>+</button>
+                    <button onClick={() => removeFromCart(item.id)} style={{ marginLeft: "0.75rem", color: "var(--b2)" }}>Remove</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: "1rem", marginTop: "0.5rem" }}>
+              <p style={{ fontWeight: 700, marginBottom: "1rem" }}>Total: {"₦" + cartTotal.toLocaleString("en-NG")}</p>
+              <button className="btn-solid" style={{ width: "100%" }} onClick={onCheckout}>
+                Checkout
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CheckoutModal({ cartItems, onClose }) {
   const [size, setSize] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -741,10 +788,13 @@ function CheckoutModal({ product, onClose }) {
   setPaying(true);
 
   const ref = "PAT-" + Date.now();
-  const orderDetails = {
-    product: product.name, size, amount: product.price,
-    name: name.trim(), email: email.trim(), address: address.trim(), ref,
-  };
+  const totalAmount = cartItems.reduce((sum, i) => sum + i.price * i.qty, 0);
+const itemsSummary = cartItems.map(i => `${i.name} x${i.qty}`).join(", ");
+
+const orderDetails = {
+  product: itemsSummary, size, amount: totalAmount,
+  name: name.trim(), email: email.trim(), address: address.trim(), ref,
+};
 
   // Save so we can restore this after Paystack redirects the customer back.
   localStorage.setItem("pat_pending_order", JSON.stringify(orderDetails));
@@ -754,12 +804,12 @@ function CheckoutModal({ product, onClose }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        email: email.trim(),
-        amount: product.price * 100,
-        reference: ref,
-        metadata: {
-          custom_fields: [
-            { display_name: "Product", variable_name: "product", value: product.name },
+  email: email.trim(),
+  amount: totalAmount * 100,
+  reference: ref,
+  metadata: {
+    custom_fields: [
+            { display_name: "Items", variable_name: "items", value: itemsSummary },
             { display_name: "Size", variable_name: "size", value: size },
             { display_name: "Delivery Address", variable_name: "address", value: address.trim() },
             { display_name: "Customer Name", variable_name: "customer_name", value: name.trim() },
@@ -800,10 +850,11 @@ function CheckoutModal({ product, onClose }) {
         <div className="co-drag" />
         <button className="co-close" onClick={onClose} aria-label="Close">×</button>
         <div className="co-product-row">
-          {product.image
-            ? <img className="co-thumb" src={product.image} alt={product.name} />
-            : <div className="co-thumb" style={{background:product.gradient}} />
-          }
+          <div style={{ marginBottom: "1rem" }}>
+  {cartItems.map(i => (
+    <p key={i.id} style={{ fontSize: 13 }}>{i.name} x{i.qty} — {"₦" + (i.price * i.qty).toLocaleString("en-NG")}</p>
+  ))}
+         </div>
           <div>
             <p className="co-pname">{product.name}</p>
             <p className="co-pprice">{NAIRA(product.price)}</p>
@@ -853,6 +904,31 @@ export default function PatienceSite() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [favorites, setFavorites] = useState(new Set());
   const [checkoutProduct, setCheckoutProduct] = useState(null);
+  const [cart, setCart] = useState([]);
+const [cartOpen, setCartOpen] = useState(false);
+
+function addToCart(product) {
+  setCart(prev => {
+    const existing = prev.find(i => i.id === product.id);
+    if (existing) {
+      return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i);
+    }
+    return [...prev, { ...product, qty: 1 }];
+  });
+  setCartOpen(true);
+}
+
+function removeFromCart(id) {
+  setCart(prev => prev.filter(i => i.id !== id));
+}
+
+function updateQty(id, qty) {
+  if (qty < 1) return removeFromCart(id);
+  setCart(prev => prev.map(i => i.id === id ? { ...i, qty } : i));
+}
+
+const cartTotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+const cartCount = cart.reduce((sum, i) => sum + i.qty, 0);
   
   function go(p) {
     setPage(p);
@@ -888,8 +964,8 @@ export default function PatienceSite() {
   }, []);
 
   let content;
-  if (page === "home") content = <HomePage go={go} favorites={favorites} onToggleFavorite={toggleFavorite} onBuy={setCheckoutProduct} />;
-  else if (CATEGORY_ORDER.includes(page)) content = <CategoryPage catKey={page} go={go} favorites={favorites} onToggleFavorite={toggleFavorite} onBuy={setCheckoutProduct} />;
+  if (page === "home") content = <HomePage go={go} favorites={favorites} onToggleFavorite={toggleFavorite} onBuy={setCheckoutProduct} onAddToCart={addToCart}/>;
+  else if (CATEGORY_ORDER.includes(page)) content = <CategoryPage catKey={page} go={go} favorites={favorites} onToggleFavorite={toggleFavorite} onBuy={setCheckoutProduct} onAddToCart={addToCart}/>;
   else if (page === "about") content = <AboutPage />;
   else if (page === "contact") content = <ContactPage />;
 
@@ -898,11 +974,12 @@ export default function PatienceSite() {
       <style>{CSS}</style>
       <PaymentReturnBanner />
       <AnnouncementBar />
-      <NavBar page={page} go={go} drawerOpen={drawerOpen} setDrawerOpen={setDrawerOpen} />
+      <NavBar page={page} go={go} drawerOpen={drawerOpen} setDrawerOpen={setDrawerOpen} cartCount={cartCount} setCartOpen={setCartOpen}/>
       <Drawer drawerOpen={drawerOpen} go={go} />
       {content}
       <Footer go={go} />
-      {checkoutProduct && <CheckoutModal product={checkoutProduct} onClose={() => setCheckoutProduct(null)} />}
+      {checkoutProduct && <CheckoutModal cartItems={cart} onClose={() => setCheckoutProduct(null)} />}
+      <CartDrawer cart={cart} cartOpen={cartOpen} setCartOpen={setCartOpen} removeFromCart={removeFromCart} updateQty={updateQty} cartTotal={cartTotal} onCheckout={() => { setCartOpen(false); setCheckoutProduct(true); }} />
       <nav className="mobile-bottom-nav" aria-label="Mobile bottom navigation">
         <button className={"mbn-btn" + (page==="home"?" active":"")} onClick={()=>go("home")}>
           <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
