@@ -165,7 +165,7 @@ function ProductCard({ product, isFavorite, onToggleFavorite, onClick, onBuy, on
         )}
         {onAddToCart && (
           <button
-            className="prod-cart-btn"
+            className="prod-buy-btn"
             onClick={e => { e.stopPropagation(); onAddToCart(product); }}
           >Add To Cart</button>
         )}
@@ -237,10 +237,7 @@ function NavBar({ page, go, drawerOpen, setDrawerOpen, cartCount, setCartOpen })
   <ShoppingBag size={18} />
   <span className="cart-badge">{cartCount}</span>
           </button>
-          <button className="nav-icon-btn cart-btn" aria-label="Cart">
-            <ShoppingBag size={18} />
-            <span className="cart-badge">0</span>
-          </button>
+
           <button
             className={"hamburger" + (drawerOpen ? " open" : "")}
             aria-label={drawerOpen ? "Close menu" : "Open menu"}
@@ -906,7 +903,7 @@ export default function PatienceSite() {
   const [checkoutProduct, setCheckoutProduct] = useState(null);
   const [cart, setCart] = useState([]);
 const [cartOpen, setCartOpen] = useState(false);
-
+const [cartMessage, setCartMessage] = useState("");
 function addToCart(product) {
   setCart(prev => {
     const existing = prev.find(i => i.id === product.id);
@@ -915,7 +912,13 @@ function addToCart(product) {
     }
     return [...prev, { ...product, qty: 1 }];
   });
-  setCartOpen(true);
+
+  setCartMessage(`${product.name} added to your bag`);
+
+  setTimeout(() => {
+     setCartMessage("");
+  }, 2500);
+
 }
 
 function removeFromCart(id) {
@@ -971,6 +974,11 @@ const cartCount = cart.reduce((sum, i) => sum + i.qty, 0);
 
   return (
     <div className="patience-site">
+      {cartMessage && (
+<div className="cart-toast">
+{cartMessage}
+</div>
+)}
       <style>{CSS}</style>
       <PaymentReturnBanner />
       <AnnouncementBar />
@@ -1024,6 +1032,8 @@ const CSS = `
   --px:1rem;
   font-family:'DM Sans',sans-serif;background:var(--white);color:var(--ink);
   overflow-x:hidden;font-size:15px;scroll-behavior:smooth;
+
+  padding-top: 75px;
 }
 @media(min-width:768px){.patience-site{--px:2rem}}
 @media(min-width:1200px){.patience-site{--px:3.5rem}}
@@ -1040,7 +1050,15 @@ const CSS = `
 @media(min-width:640px){.ann-extra{display:inline}}
 
 /* ─── NAV ─────────────────────────────── */
-.nav-wrap{position:sticky;top:0;z-index:300;background:var(--white);border-bottom:var(--border);box-shadow:0 1px 12px rgba(79,143,173,.07)}
+.nav-wrap{position: fixed;
+top: 32;
+left: 0;
+right: 0;
+width: 100%;
+z-index: 1000;
+background: var(--white);
+border-bottom: var(--border);
+box-shadow: 0 1px 12px rgba(79,143,173,.07);}
 .nav-util{display:none;border-bottom:var(--border);padding:.35rem var(--px);justify-content:space-between;align-items:center}
 @media(min-width:900px){.nav-util{display:flex}}
 .nav-util-left,.nav-util-right{display:flex;gap:1.5rem;align-items:center}
