@@ -465,7 +465,7 @@ function HomePage({ go, favorites, onToggleFavorite, onBuy, onAddToCart  }) {
         </div>
         <div className="prod-grid">
           {newArrivals.map((p) => (
-            <ProductCard key={p.id} product={p} isFavorite={favorites.has(p.id)} onToggleFavorite={onToggleFavorite} onClick={() => go(p.cat)} onBuy={onBuy} />
+            <ProductCard key={p.id} product={p} isFavorite={favorites.has(p.id)} onToggleFavorite={onToggleFavorite} onClick={() => go(p.cat)} onBuy={onBuy} onAddToCart={onAddToCart} />
           ))}
         </div>
       </section>
@@ -514,7 +514,7 @@ function CategoryPage({ catKey, go, favorites, onToggleFavorite, onBuy, onAddToC
       <section className="products-sec">
         <div className="prod-grid">
           {shown.map((p) => (
-            <ProductCard key={p.id} product={p} isFavorite={favorites.has(p.id)} onToggleFavorite={onToggleFavorite} onBuy={onBuy} onAddToCart={addToCart} />
+            <ProductCard key={p.id} product={p} isFavorite={favorites.has(p.id)} onToggleFavorite={onToggleFavorite} onBuy={onBuy} onAddToCart={onAddToCart} />
           ))}
         </div>
         {shown.length === 0 && <p className="empty-msg">No pieces match this filter yet — check back soon.</p>}
