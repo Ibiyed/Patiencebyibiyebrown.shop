@@ -964,8 +964,8 @@ const cartCount = cart.reduce((sum, i) => sum + i.qty, 0);
   }, []);
 
   let content;
-  if (page === "home") content = <HomePage go={go} favorites={favorites} onToggleFavorite={toggleFavorite} onBuy={setCheckoutProduct} onAddToCart={addToCart}/>;
-  else if (CATEGORY_ORDER.includes(page)) content = <CategoryPage catKey={page} go={go} favorites={favorites} onToggleFavorite={toggleFavorite} onBuy={setCheckoutProduct} onAddToCart={addToCart}/>;
+  if (page === "home") content = <HomePage go={go} favorites={favorites} onToggleFavorite={toggleFavorite} onBuy={setCheckoutProduct} onAddToCart={addToCart} />;
+  else if (CATEGORY_ORDER.includes(page)) content = <CategoryPage catKey={page} go={go} favorites={favorites} onToggleFavorite={toggleFavorite} onBuy={setCheckoutProduct} onAddToCart={addToCart} />;
   else if (page === "about") content = <AboutPage />;
   else if (page === "contact") content = <ContactPage />;
 
