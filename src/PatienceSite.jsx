@@ -851,12 +851,12 @@ const orderDetails = {
         <button className="co-close" onClick={onClose} aria-label="Close">×</button>
         <div className="co-product-row">
           <div style={{ marginBottom: "1rem" }}>
-  {cartItems.map(i => (
-    <p key={i.id} style={{ fontSize: 13 }}>{i.name} x{i.qty} — {"₦" + (i.price * i.qty).toLocaleString("en-NG")}</p>
-  ))}
          </div>
+
           <div>
-            <p className="co-pname">{cartItems.map((item) => `${item.name} * ${item.qty || 1}`).join (", ")}</p>
+            <p className="co-pname">{cartItems.length === 1
+? cartItems[0].name
+: `${cartItems.length} items`}</p>
             <p className="co-pprice">{NAIRA(checkoutTotal)}</p>
           </div>
         </div>
@@ -1431,7 +1431,7 @@ footer{background:var(--b6);color:rgba(255,255,255,.55);padding:3rem var(--px) 2
    CHECKOUT MODAL
 ═══════════════════════════════════════ */
 .co-overlay{
-  position:fixed;inset:0;z-index:500;background:rgba(26,46,59,.55);
+  position:fixed;inset:0;z-index:3000;background:rgba(26,46,59,.55);
   display:flex;align-items:flex-end;justify-content:center;
   backdrop-filter:blur(3px);
 }
@@ -1441,9 +1441,11 @@ footer{background:var(--b6);color:rgba(255,255,255,.55);padding:3rem var(--px) 2
 .co-modal{
   background:var(--white);width:100%;max-width:520px;
   border-radius:16px 16px 0 0;
-  max-height:92vh;overflow-y:auto;
+  max-height: calc(100vh - 40px);overflow-y:auto;
   padding:1.75rem 1.5rem 2.5rem;
   position:relative;
+  z-index: 3001;
+  margin-top: 20px;
 }
 @media(min-width:640px){
   .co-modal{border-radius:12px;padding:2.25rem 2rem 2.5rem;max-height:90vh;}
@@ -1451,7 +1453,8 @@ footer{background:var(--b6);color:rgba(255,255,255,.55);padding:3rem var(--px) 2
 .co-drag{width:40px;height:4px;background:var(--b3);border-radius:100px;margin:0 auto 1.5rem;}
 @media(min-width:640px){.co-drag{display:none;}}
 .co-close{
-  position:absolute;top:1.25rem;right:1.25rem;
+  position:sticky;top: 12px;right: 12px;
+  z-index: 5;
   background:var(--b5);border:none;border-radius:50%;
   width:32px;height:32px;display:flex;align-items:center;justify-content:center;
   cursor:pointer;color:var(--ink2);font-size:18px;line-height:1;
