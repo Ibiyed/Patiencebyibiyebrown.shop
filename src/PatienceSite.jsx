@@ -770,6 +770,9 @@ function CheckoutModal({ cartItems, onClose }) {
   const [paying, setPaying] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const checkoutTotal = cartItems.reduce(
+(sum, item) => sum + Number(item.price || 0) * Number(item.qty || 1), 0
+);
   const validate = () => {
     const e = {};
     if (!size) e.size = "Please select a size";
@@ -853,8 +856,8 @@ const orderDetails = {
   ))}
          </div>
           <div>
-            <p className="co-pname">{product.name}</p>
-            <p className="co-pprice">{NAIRA(product.price)}</p>
+            <p className="co-pname">{cartItems.map((item) => `${item.name} * ${item.qty || 1}`).join (", ")}</p>
+            <p className="co-pprice">{NAIRA(checkoutTotal)}</p>
           </div>
         </div>
         <p className="co-section-label">Select Size</p>
@@ -888,7 +891,7 @@ const orderDetails = {
           </div>
         </div>
         <button className="co-pay-btn" onClick={handlePay} disabled={paying}>
-          {paying ? "Opening payment…" : "Pay " + NAIRA(product.price)}
+          {paying ? "Opening payment…" : "Pay " + NAIRA(checkoutTotal)}
         </button>
         <p className="co-secure">🔒 Secured by Paystack · Cards, Bank Transfer & more</p>
       </div>
@@ -900,10 +903,18 @@ export default function PatienceSite() {
   const [page, setPage] = useState("home");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [favorites, setFavorites] = useState(new Set());
-  const [checkoutProduct, setCheckoutProduct] = useState(null);
+  const [checkoutItems, setCheckoutItems] = useState([ ]);
   const [cart, setCart] = useState([]);
 const [cartOpen, setCartOpen] = useState(false);
 const [cartMessage, setCartMessage] = useState("");
+function buyNow(product) {
+   setCheckoutItems([
+    {
+    ...product,
+     qty: 1,
+   },
+   ]);
+}
 function addToCart(product) {
   setCart(prev => {
     const existing = prev.find(i => i.id === product.id);
