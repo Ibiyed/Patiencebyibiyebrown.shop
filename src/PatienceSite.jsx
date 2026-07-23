@@ -987,7 +987,7 @@ const cartCount = cart.reduce((sum, i) => sum + i.qty, 0);
       {content}
       <Footer go={go} />
       {checkoutProduct && <CheckoutModal cartItems={cart} onClose={() => setCheckoutProduct(null)} />}
-      <CartDrawer cart={cart} cartOpen={cartOpen} setCartOpen={setCartOpen} removeFromCart={removeFromCart} updateQty={updateQty} cartTotal={cartTotal} onCheckout={() => { setCartOpen(false); setCheckoutProduct(true); }} />
+      <CartDrawer cart={cart} cartOpen={cartOpen} setCartOpen={setCartOpen} removeFromCart={removeFromCart} updateQty={updateQty} cartTotal={cartTotal} onCheckout={() => { if (cart.length === 0) return; setCartOpen(false); setCheckoutProduct(cart[0]); }} />
       <nav className="mobile-bottom-nav" aria-label="Mobile bottom navigation">
         <button className={"mbn-btn" + (page==="home"?" active":"")} onClick={()=>go("home")}>
           <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
