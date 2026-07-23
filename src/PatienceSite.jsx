@@ -854,9 +854,11 @@ const orderDetails = {
          </div>
 
           <div>
-            <p className="co-pname">{cartItems.length === 1
-? cartItems[0].name
-: `${cartItems.length} items`}</p>
+            <p className="co-pname">{cartItems.map(item => (
+<p key={item.id}>
+{item.name} ×{item.qty}
+</p>
+))}</p>
             <p className="co-pprice">{NAIRA(checkoutTotal)}</p>
           </div>
         </div>
